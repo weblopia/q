@@ -238,6 +238,10 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% @doc Read from storage file
 storage_read(State) ->
 
-  {ok, IoDevice}     = file:open(q_lib_paths:get_data_directory(["qwe", "last-strict-monotonic-time"]), [write, read]),
+  {ok, IoDevice}     = file:open(q_lib_paths:project_data_directory(["app", "q", "last-strict-monotonic-time"]), [write, read]),
   {ok, _NewPosition} = file:position(IoDevice, {bof, 0}),
-  {ok, Data}         = read(IoDevice, Number).
+  case file:read(IoDevice, Number) of
+      {ok, <<Size:4/little-signed-integer-unit:8} ->
+          case file:read(IoDevice, Size32) of
+
+          end
