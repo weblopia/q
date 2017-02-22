@@ -1,0 +1,20 @@
+{application, q,
+ [
+
+  {description, "q"},
+  {vsn, "1"},
+  {modules, [
+    q_app,
+    q_sup,
+    q_lib
+            ]},
+  {mod,{q_app,[]}},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+
+  {env, []}
+
+ ]}.
