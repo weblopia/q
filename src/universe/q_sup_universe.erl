@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------
-%%% @author Madalin Grigore-Enescu
-%%% @copyright (C) 2017, <Madalin Grigore-Enescu>
+%%% @author madalin
+%%% @copyright (C) 2017, <COMPANY>
 %%% @doc
 %%%
 %%% @end
-%%% Created : 09. Feb 2017 8:38 PM
+%%% Created : 22. Feb 2017 6:00 PM
 %%%-------------------------------------------------------------------
--module(q_sup).
+-module(q_sup_universe).
 -author("madalin").
 
 -behaviour(supervisor).
@@ -36,7 +36,7 @@ start_link() ->
 init([]) ->
 
   {ok,{{one_for_one, 10, 10}, [
-    {q_sup_universe, {q_sup_universe, start_link, []}, permanent, 5000, supervisor, [q_sup_universe]}
+    {q_srv_universe_bridge, {q_srv_universe_bridge, start_link, []}, permanent, 5000, worker, [q_srv_universe_bridge]}
   ]}}.
 
 %% @spec upgrade() -> ok

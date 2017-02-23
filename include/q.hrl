@@ -55,6 +55,19 @@
 %% Fixed bytes length of a time uuid.
 -define(Q_UUIDIMI_LENGTH,                   36).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Q serializor term type
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-define(Q_SERIALIZOR_TYPE_BINARY,  1).
+-define(Q_SERIALIZOR_TYPE_INTEGER, 2).
+-define(Q_SERIALIZOR_TYPE_FLOAT,   3).
+-define(Q_SERIALIZOR_TYPE_STRING,  4).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Q various records
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -record(q_sc_node, {
   cloud_id = undefined,
   node_id = undefined
@@ -74,10 +87,10 @@
 }).
 
 -record(q_srv_strict_monotonic_time_state, {
-  file = undefined :: undefined | io_device(),
-  last_seconds = undefined :: undefined | pos_integer(),
+  io_device         = undefined :: undefined | io_device(),
+  last_nanoseconds  = undefined :: undefined | pos_integer(),
   last_milliseconds = undefined :: undefined | pos_integer(),
   last_microseconds = undefined :: undefined | pos_integer(),
-  last_nanoseconds = undefined :: undefined | pos_integer()
+  last_seconds      = undefined :: undefined | pos_integer()
 }).
 

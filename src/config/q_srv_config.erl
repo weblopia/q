@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------
-%%% @author Madalin Grigore-Enescu
-%%% @copyright (C) 2017, <Madalin Grigore-Enescu>
+%%% @author madalin
+%%% @copyright (C) 2017, <COMPANY>
 %%% @doc
 %%%
 %%% @end
-%%% Created : 07. Feb 2017 6:08 PM
+%%% Created : 22. Feb 2017 10:52 PM
 %%%-------------------------------------------------------------------
--module(q_srv_strict_monotonic_time).
+-module(q_srv_config).
 -author("Madalin Grigore-Enescu").
 
 -include_lib("q/include/q.hrl").
@@ -15,10 +15,10 @@
 
 %% API
 -export([start_link/0]).
--export([get_seconds/0]).
--export([get_milliseconds/0]).
--export([get_microseconds/0]).
--export([get_nanoseconds/0]).
+-export([get_option/1]).
+-export([get_node_option/1]).
+-export([get_cluster_option/1]).
+-export([get_universe_option/1]).
 
 %% gen_server Exports
 -export([
@@ -39,25 +39,17 @@
 %% It will, among other things, ensure that the gen_server is linked to the supervisor.
 start_link() -> gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-%% @doc Returns the current Q monotonic time in seconds.
-%% This is a strictly monotonically increasing time regardless Erlang time warp mode curently in use.
-%% That is, consecutive calls to q_lib_time:strict_monotonic_seconds/0 can NOT produce the same result.
-get_seconds() -> gen_server:call(?MODULE, get_seconds, infinity).
+%% @doc Returns the specified option
+get_option(Name) -> gen_server:call(?MODULE, {get_option, Name}, infinity).
 
-%% @doc Returns the current Q monotonic time in milliseconds.
-%% This is a strictly monotonically increasing time regardless Erlang time warp mode curently in use.
-%% That is, consecutive calls to q_lib_time:strict_monotonic_milliseconds/0 can NOT produce the same result.
-get_milliseconds() -> gen_server:call(?MODULE, get_milliseconds, infinity).
+%% @doc Returns the specified node option
+get_node_option(Name) -> gen_server:call(?MODULE, {get_node_option, Name}, infinity).
 
-%% @doc Returns the current Q monotonic time in microseconds
-%% This is a strictly monotonically increasing time regardless Erlang time warp mode curently in use.
-%% That is, consecutive calls to q_lib_time:strict_monotonic_microseconds/0 can NOT produce the same result.
-get_microseconds() -> gen_server:call(?MODULE, get_microseconds, infinity).
+%% @doc Returns the specified cluster option
+get_cluster_option(Name) -> gen_server:call(?MODULE, {get_cluster_option, Name}, infinity).
 
-%% @doc Returns the current Q monotonic time in nanoseconds
-%% This is a strictly monotonically increasing time regardless Erlang time warp mode curently in use.
-%% That is, consecutive calls to q_lib_time:strict_monotonic_nanoseconds/0 can NOT produce the same result.
-get_nanoseconds() -> gen_server:call(?MODULE, get_nanoseconds, infinity).
+%% @doc Returns the specified universe option
+get_universe_option(Name) -> gen_server:call(?MODULE, {get_universe_option, Name}, infinity).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% INIT
@@ -80,32 +72,10 @@ get_nanoseconds() -> gen_server:call(?MODULE, get_nanoseconds, infinity).
 %% If the initialization fails, the function is to return {stop,Reason}, where Reason is any term, or ignore.
 init([]) ->
 
-  %% Get last values from storage
-  %% This must succed. If we fail we must stop here and force administrators to check what's going on with this node
-  case file:open(q_lib_paths:project_data_directory(["app", "q", "last-time"]), [write, read]) of
-    {ok, IoDevice} ->
 
-      %% Keep the io_device open for later faster usage
-      State = #q_srv_strict_monotonic_time_state{io_device = IoDevice},
 
-      %% Read
-      case storage_read(State) of
-        {ok, ReadState} ->
-
-          %% Trigger saving a snapshot to storage from time to time
-          PingTimer	= q_lib_config:get_option(<<"q_srv_strict_monotonic">>),
-          erlang:send_after(PingTimer, self(), snapshot),
-
-          %% OK
-          {ok, ReadState, infinity};
-
-        ErrorRead -> {stop, {error, <<"error_reading_storage_file">>, [ErrorRead]}}
-
-      end;
-
-    ErrorOpen -> {stop, {error, <<"error_opening_storage_file">>, [ErrorOpen]}}
-
-  end.
+  %% OK
+  {ok, State, infinity}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% handle_call
@@ -248,36 +218,3 @@ terminate(_Reason, _State) -> ok.
 %% If successful, the function must return the updated internal state.
 %% If the function returns {error,Reason}, the ongoing upgrade fails and rolls back to the old release.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% actions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% @doc Read from storage file
-storage_read(State = #q_srv_strict_monotonic_time_state{io_device = IoDevice}) ->
-
-  case file:position(IoDevice, {bof, 0}) of
-    {ok, _} ->
-
-      case file:read(IoDevice, 4) of
-
-        {ok, <<LastNanoseconds:16/little-unsigned-integer-unit:8,
-        LastMicroseconds:16/little-unsigned-integer-unit:8,
-        LastMilliseconds:16/little-unsigned-integer-unit:8,
-        LastSeconds:16/little-unsigned-integer-unit:8
-        >>} ->
-
-          State#q_srv_strict_monotonic_time_state{
-            last_nanoseconds  = LastNanoseconds,
-            last_microseconds = LastMicroseconds,
-            last_milliseconds = LastMilliseconds,
-            last_seconds      = LastSeconds
-          };
-
-        Error2 -> Error2
-
-      end;
-
-    Error1 -> Error1
-
-  end.
